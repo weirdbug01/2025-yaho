@@ -1,1 +1,103 @@
+import streamlit as st
+from ollama import chat
+import re
 
+def convertToInitialLetters(text):
+    CHOSUNG_START_LETTER = 4352
+    JAMO_START_LETTER = 44032
+    JAMO_END_LETTER = 55203
+    JAMO_CYCLE = 588
+
+    def isHangul(ch):
+        return ord(ch) >= JAMO_START_LETTER and ord(ch) <= JAMO_END_LETTER
+    
+    result = ""
+    for ch in text:
+        if isHangul(ch):
+            result += unichr((ord(ch) - JAMO_START_LETTER) / JAMO_CYCLE + CHOSUNG_START_LETTER)
+    
+    return result
+
+# 공백과 특수문자를 제거하여 정규화
+def normalize_text(text):
+    return re.sub(r"[\s\W_]+", "", text)
+
+# 모든 대화 기록에서 중복을 검사하는 함수 (사용자 + 챗봇 모두)
+def is_duplicate(word):
+    normalized_word = normalize_text(word)
+    return any(normalize_text(msg['content']) == normalized_word for msg in st.session_state.messages)
+
+# set page info
+st.set_page_config(page_title='Test')
+st.title("My Personal Assistant")
+
+# create chat history
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+# 대화 기록 표시 (사용자와 챗봇 구분)
+st.header("📜 대화 기록")
+for message in st.session_state.messages:
+    role = "User" if message['role'] == 'user' else "PlayerBot"
+    with st.chat_message(message['role']):
+        st.markdown(f"**{role}:** {message['content']}")
+
+# accept user input
+if prompt := st.chat_input("Please Write the word"):
+    # 중복 검사 (사용자와 챗봇의 모든 기록 검사)
+    if is_duplicate(prompt):
+        st.warning("이미 사용한 단어입니다. 다른 단어를 입력하세요.")
+    else:
+        # 사용자 발언 추가
+        st.session_state.messages.append({'role': 'user', 'content': prompt})
+        with st.chat_message("user"):
+            st.markdown(f"**User:** {prompt}")
+
+        # 챗봇 응답 생성 및 중복 검사
+        with st.chat_message("PlayerBot"):
+            placeholder = st.empty()
+            response = ""
+
+            while True:
+                # 대화 기록을 교대로 넣어서 챗봇에게 전달
+                chat_history = [
+                    {"role": "system", "content": (
+                        "너는 끝말잇기 전문가야. 사용자가 제시한 마지막 글자로 시작하는 단어를 제시해. "
+                        "항상 사용자가 마지막으로 입력한 단어의 마지막 글자로 시작하는 단어를 제시해야 해. "
+                        "전에 사용했던 단어를 사용해서는 안 돼. "
+                        "예시: '강아지' → '지갑', '고양이' → '이발소'. "
+                        "중복되는 단어는 사용하면 안 돼. 또 한 글자 단어도 안 돼. "
+                        "반드시 사용자의 마지막 글자에 집중해서 답변해. 한 글자로 답하면 규칙을 어긴 거야. "
+                        "한국어로만 대답하고, 두 글자 이상의 한 단어로만 답해."
+                    )}
+                ]
+                
+                # 대화 기록을 사용자-챗봇 순으로 정리하여 전달
+                for msg in st.session_state.messages:
+                    chat_history.append({"role": msg['role'], "content": msg['content']})
+
+                # 챗봇 응답 생성
+                stream = chat(
+                    model='gemma3:12b',
+                    messages=chat_history,
+                    stream=True
+                )
+
+                response = ""
+                for chunk in stream:
+                    response += chunk.message.content
+                    placeholder.markdown(f"**PlayerBot:** {response}")
+
+                # 챗봇 응답을 기록에 추가하여 중복 검사에 반영
+                st.session_state.messages.append({"role": "assistant", "content": response})
+
+                # 중복 검사
+                if not is_duplicate(response):
+                    break
+                else:
+                    st.warning("챗봇이 중복된 단어를 제시했습니다. 다시 시도합니다.")
+                    # 중복된 응답을 기록에서 제거
+                    st.session_state.messages.pop()
+
+        # 최종 응답을 기록에 추가
+        st.session_state.messages.append({"role": "assistant", "content": response})
