@@ -1,0 +1,254 @@
+{
+  "3": {
+    "inputs": {
+      "seed": 99930334491323,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 1,
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "12",
+        0
+      ],
+      "negative": [
+        "12",
+        1
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "4": {
+    "inputs": {
+      "ckpt_name": "JANKUV4NSFWTrainedNoobaiEPS_v40StyleA.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "체크포인트 로드"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "빈 잠재 이미지"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": "He has green skin. Changes from a calm expression to an angry expression",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP 텍스트 인코딩 (프롬프트)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": "text, watermark",
+      "clip": [
+        "4",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP 텍스트 인코딩 (프롬프트)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE 디코드"
+    }
+  },
+  "10": {
+    "inputs": {
+      "control_net_name": "diffusion_pytorch_model_promax.safetensors"
+    },
+    "class_type": "ControlNetLoader",
+    "_meta": {
+      "title": "컨트롤넷 모델 로드"
+    }
+  },
+  "11": {
+    "inputs": {
+      "image": "sketch.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "이미지 로드"
+    }
+  },
+  "12": {
+    "inputs": {
+      "strength": 0.8000000000000002,
+      "start_percent": 0,
+      "end_percent": 1,
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "control_net": [
+        "10",
+        0
+      ],
+      "image": [
+        "11",
+        0
+      ],
+      "vae": [
+        "4",
+        2
+      ]
+    },
+    "class_type": "ControlNetApplyAdvanced",
+    "_meta": {
+      "title": "컨트롤넷 적용"
+    }
+  },
+  "16": {
+    "inputs": {
+      "min_cfg": 1,
+      "model": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "VideoLinearCFGGuidance",
+    "_meta": {
+      "title": "비디오 선형 CFG 가이드"
+    }
+  },
+  "17": {
+    "inputs": {
+      "ckpt_name": "svd_xt.safetensors"
+    },
+    "class_type": "ImageOnlyCheckpointLoader",
+    "_meta": {
+      "title": "이미지 전용 체크포인트 로드 (img2vid 모델)"
+    }
+  },
+  "18": {
+    "inputs": {
+      "width": 512,
+      "height": 512,
+      "video_frames": 22,
+      "motion_bucket_id": 127,
+      "fps": 6,
+      "augmentation_level": 0,
+      "clip_vision": [
+        "17",
+        1
+      ],
+      "init_image": [
+        "8",
+        0
+      ],
+      "vae": [
+        "17",
+        2
+      ]
+    },
+    "class_type": "SVD_img2vid_Conditioning",
+    "_meta": {
+      "title": "SVD 조건 설정 (이미지 → 비디오)"
+    }
+  },
+  "19": {
+    "inputs": {
+      "seed": 916290610471032,
+      "steps": 20,
+      "cfg": 4.5,
+      "sampler_name": "euler",
+      "scheduler": "karras",
+      "denoise": 1,
+      "model": [
+        "16",
+        0
+      ],
+      "positive": [
+        "18",
+        0
+      ],
+      "negative": [
+        "18",
+        1
+      ],
+      "latent_image": [
+        "18",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "20": {
+    "inputs": {
+      "samples": [
+        "19",
+        0
+      ],
+      "vae": [
+        "17",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE 디코드"
+    }
+  },
+  "21": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "fps": 10.000000000000002,
+      "lossless": false,
+      "quality": 85,
+      "method": "default",
+      "images": [
+        "20",
+        0
+      ]
+    },
+    "class_type": "SaveAnimatedWEBP",
+    "_meta": {
+      "title": "애니메이션 WEBP 저장"
+    }
+  }
+}
